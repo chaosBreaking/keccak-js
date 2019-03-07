@@ -97,6 +97,7 @@ module.exports = {
   bin2hex4,
   bin2byte,
   arr2string,
+  sa2log,
   // map1 means θ
   map1: function(sa = this.sa) {
     let C = [], D = []
