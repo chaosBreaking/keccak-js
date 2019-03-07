@@ -1,4 +1,5 @@
 'use strict'
+const deepCopy = require('deepcopy')
 const rc = function(t) {
   if (t % 255 === 0) return 1
   let R = [1,0,0,0,0,0,0,0]
@@ -13,19 +14,6 @@ const rc = function(t) {
   }
   return R[0]
 }
-const res2 = `06 00 00 00 00 00 00 00 0E 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00
-00 00 00 60 00 00 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 70 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 00 40 00 00 00 C0 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 1C 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 
-00 00 00 00 00 06 00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00 E0 00 00 00 40 00 00 00 00 00 00
-00 00 10 00 00 00 00 00 00 0C 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 1C 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 00
-00 00 03 00 00 00 00 00 `.toLowerCase()
 const r = [
   [0, 36, 3, 41, 18],
   [1, 44, 10, 45, 2],
@@ -33,6 +21,8 @@ const r = [
   [28, 55, 25, 21, 56],
   [27, 20, 39, 8, 14]
 ]
+const mapXY = [2, 3, 4, 0, 1]
+
 function mod(a, b) {
   if (a > 0) return a % b
   while (a < 0) {
@@ -59,6 +49,24 @@ function bin2hex4 (data) {
     })
     res += num.toString(16)
     count += 4
+  }
+  return res
+}
+function bin2hex8 (data) {
+  let res = ''
+  let count = 0
+  while (data[count]) {
+    let numa = 0 , numb = 0
+    let byte = data.slice(count, count + 8).split('').reverse()
+    let [a, b] = [byte.slice(0, 4), byte.slice(4)]
+    a.forEach((v, i) => {
+      numa += +v * 2 ** (3 - i)
+    })
+    b.forEach((v, i) => {
+      numb += +v * 2 ** (3 - i)
+    })
+    res += numa.toString(16) + numb.toString(16)
+    count += 8
   }
   return res
 }
@@ -95,6 +103,7 @@ module.exports = {
   mod,
   StrArrXOR,
   bin2hex4,
+  bin2hex8,
   bin2byte,
   arr2string,
   sa2log,
@@ -120,16 +129,16 @@ module.exports = {
         }
       }
     }
-    let temp = sa2log(sa)
+    // let testres = sa2log(sa)
+    // let ok = res1.split(' ').join('') == testres.split(' ').join('')
+    // ok ? console.log('map1 结果正确！') : console.error('map1 结果错误！')
     return sa
   },
   // map2 means ρ
   map2: function(sa = this.sa) {
+    // 巨坑。。。需要深拷贝sa！
     // step 1
-    let sa1 = [...sa]
-    for (let z = 0; z < this.w; z++) {
-      sa1[0][0][z] = sa[0][0][z]
-    }
+    let newSa = deepCopy(sa)
     // step 2
     let [x, y] = [1, 0]
     // step 3
@@ -137,52 +146,55 @@ module.exports = {
       // a
       for (let z = 0; z < this.w; z++) {
         let temp = mod(z - (t + 1) * (t + 2) / 2, this.w)
-        sa1[x][y][z] = sa[x][y][temp]
+        newSa[x][y][z] = sa[x][y][temp]
       }
       // b
       [x, y] = [y, mod((2 * x + 3 * y), 5)]
     }
     // step 4
-    let temp = sa2log(sa)
-    let ok = temp === res2
-    return sa1
+    // let testres = sa2log(newSa)
+    // let ok = res2.split(' ').join('') == testres.split(' ').join('')
+    // ok ? console.log('map2 结果正确！') : console.error('map2 结果错误！')
+    return newSa
   },
   // map3 means π
-  map3: function() {
+  map3: function(sa = this.sa) {
+    let newSa = deepCopy(sa)
     for (let x = 0; x < 5; x++) {
-      this.sa[x] = this.sa[x] === undefined ? [] : this.sa[x]
       for (let y = 0; y < 5; y++) {
-        this.sa[x][y] = this.sa[x][y] === undefined ? [] : this.sa[x][y]
-        for (let z = 0; z >= 0 && z < this.w; z++) {
-          this.sa[x][y][z] = this.sa[(x + 3 * y) % 5][x][z]
+        for (let z = 0; z < this.w; z++) {
+          newSa[x][y][z] = sa[(x + 3 * y) % 5][x][z]
         }
       }
     }
-    return this.sa
+    // let testres = sa2log(newSa)
+    return newSa
   },
   // map4 means χ
-  map4: function() {
+  map4: function(sa = this.sa) {
+    let newSa = deepCopy(sa)
     for (let x = 0; x < 5; x++) {
-      this.sa[x] = this.sa[x] === undefined ? [] : this.sa[x]
       for (let y = 0; y < 5; y++) {
-        this.sa[x][y] = this.sa[x][y] === undefined ? [] : this.sa[x][y]
         for (let z = 0; z >= 0 && z < this.w; z++) {
-          this.sa[x][y][z] = this.sa[x][y][z] ^ ((this.sa[(x + 1) % 5][y][z] ^ 1) * this.sa[(x + 2) % 5][y][z])
+          newSa[x][y][z] = sa[x][y][z] ^ ( (sa[(x + 1) % 5][y][z] ^ 1) * sa[(x + 2) % 5][y][z] )
         }
       }
     }
-    return this.sa
+    // let testres = sa2log(newSa)
+    return newSa
   },
   // map5 means ι
-  map5: function(ir) {
+  map5: function(sa = this.sa, ir) {
+    // let newSa = deepCopy(sa)
     let RC = '0'.repeat(this.w).split()
     for (let j = 0; j <= this.l; j++) {
       RC[2**j - 1] = rc(j + 7 * ir)
     }
-    for (let z = 0; 0 <= z && z < this.w; z++) {
-      this.sa[0][0][z] ^= RC[z]
+    for (let z = 0; z < this.w; z++) {
+      sa[0][0][z] ^= RC[z]
     }
-    return this.sa
+    // let testres = sa2log(sa)
+    return sa
   },
   /**
    * positive int x

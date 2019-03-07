@@ -3,42 +3,6 @@
 const util = require('./util.js')
 const KECCAKC_TYPE = [448, 512, 768, 1024]
 const SHA3_TYPE = [224, 256, 384, 512]
-// Round constants
-const RC = [
-  0x0000000000000001,
-  0x0000000000008082,
-  0x800000000000808A,
-  0x8000000080008000,
-  0x000000000000808B,
-  0x0000000080000001,
-  0x8000000080008081,
-  0x8000000000008009,
-  0x000000000000008A,
-  0x0000000000000088,
-  0x0000000080008009,
-  0x000000008000000A,
-  0x000000008000808B,
-  0x800000000000008B,
-  0x8000000000008089,
-  0x8000000000008003,
-  0x8000000000008002,
-  0x8000000000000080,
-  0x000000000000800A,
-  0x800000008000000A,
-  0x8000000080008081,
-  0x8000000000008080,
-  0x0000000080000001,
-  0x8000000080008008
-]
-
-// Rotation offsets
-const r = [
-  [0, 36, 3, 41, 18],
-  [1, 44, 10, 45, 2],
-  [62, 6, 43, 15, 61],
-  [28, 55, 25, 21, 56],
-  [27, 20, 39, 8, 14]
-]
 
 class Keccak {
   constructor (b = 1600) {
@@ -53,14 +17,6 @@ class Keccak {
     this.q = 0
     this.S = ''
     this.c = 0
-  }
-
-  init (message, c) {
-    if (!c || !Number.isSafeInteger(c)) throw new Error('缺少必要参数 C')
-    this.meta = Buffer.from(message)
-    this.c = c
-    let r = this.b - c
-    this.q = (r / 8) - util.mod(message.length, r/8)
   }
   bytePad () {
     let pad
@@ -126,14 +82,6 @@ class Keccak {
     }
     return this.S
   }
-  getKeccak(c) {
-    return function k(m) {
-      this.init(m, c)
-      this.padding()
-      this.trans2BitString()
-      this.initSa()
-    }.bind(this)
-  }
   array2String () {
     let s = ''
     for (let x = 0; x >= 0 && x < 5; x++) {
@@ -163,7 +111,6 @@ class Keccak {
     util['map'+ i].call(this, ir)
   }
   keccak_p (b, nr) {
-    // keccak-p[b, nr](S)
     return function(str)  {
       this.initSa(str)
       for (let ir = 12 + 2 * this.l - nr; ir <= 12 + 2 * this.l - 1; ir++) {
@@ -211,7 +158,7 @@ class Keccak {
       S = func.call(this, S)
     }
   }
-  sponge_byte(func, pad = this.padding, r, N, d) {
+  sponge_byte(func, pad = this.bytePad, r, N, d) {
     // step 1
     /* 
       SPONGE[f, pad, r](N, d)
@@ -219,32 +166,11 @@ class Keccak {
       r: rate;
       pad(x,m): x > 0(int), m >= 0 (int)
     */
-    this.init(N, this.b - r)
+    this.meta = Buffer.from(N)
+    this.c = this.b - r
+    this.q = (r / 8) - util.mod(N.length, r/8)
     this.pad(N)
     let P = this.trans2BitString()
-    let n = Math.floor(P.length / r)
-    let c = this.b - r
-    let PArr;
-    for (let i = 0; ; i++) {
-      if (PArr[i * r] && PArr[i * r + r]) {
-        PArr = P.slice(i * r, i * r + r)
-      }
-      else {
-        PArr = P.slice(i * r)
-        break
-      }
-    }
-    let S = '0'.repeat(this.b)
-    for (let i = 0; i < n; i++) {
-      let xoredS = util.StrArrXOR(S, (PArr[i] + '0'.repeat(c)))
-      S = func(xoredS)
-    }
-    let Z = ''
-    Z = Z + S.slice(0, r + 1)
-    while(1) {
-      if (d <= Z.length) return Z.slice(0, d + 1)
-      S = func(S)
-    }
   }
   keccak_c (c) {
     if (!KECCAKC_TYPE.includes(c)) throw new Error('Keccak[c]: Invalid digest length: ', d)
@@ -262,15 +188,9 @@ class Keccak {
   */
   sha3 (d, m) {
     if (!SHA3_TYPE.includes(d)) throw new Error('SHA3: Invalid digest length: ', d)
-    if (typeof m !== 'string') {
-      if (Buffer.isBuffer(m)) {
-        m = this.trans2BitString (m)
-      }
-      throw new Error('SHA3: Invalid input')
-    }
-    return this.keccak_c(2 * d)(m + '01', d)
+    m = this.trans2BitString(Buffer.from(String(m)))
+    return util.bin2hex8(this.keccak_c(2 * d)(m + '01', d))
   }
 }
-// let k = new Keccak(1600)
 
 module.exports = Keccak
