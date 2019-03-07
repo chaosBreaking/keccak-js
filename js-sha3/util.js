@@ -13,7 +13,26 @@ const rc = function(t) {
   }
   return R[0]
 }
-
+const res2 = `06 00 00 00 00 00 00 00 0E 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 08 00 00 00 00
+00 00 00 60 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 70 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 40 00 00 00 C0 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 1C 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00 
+00 00 00 00 00 06 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 E0 00 00 00 40 00 00 00 00 00 00
+00 00 10 00 00 00 00 00 00 0C 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 1C 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 00
+00 00 03 00 00 00 00 00 `.toLowerCase()
+const r = [
+  [0, 36, 3, 41, 18],
+  [1, 44, 10, 45, 2],
+  [62, 6, 43, 15, 61],
+  [28, 55, 25, 21, 56],
+  [27, 20, 39, 8, 14]
+]
 function mod(a, b) {
   if (a > 0) return a % b
   while (a < 0) {
@@ -21,65 +40,117 @@ function mod(a, b) {
   }
   return a
 }
+function StrArrXOR (a, b) {
+  if (a.length !== b.length) throw new Error('无法对不同长度的两串字符进行异或');
+  let res = ''
+  for (let i = 0; i < a.length; i++) {
+    res += a[i] ^ b[i]
+  }
+  return res
+}
+function bin2hex4 (data) {
+  let res = ''
+  let count = 0
+  while (data[count]) {
+    let num = 0
+    let arr = data.slice(count, count + 4).split('').reverse()
+    arr.forEach((v, i) => {
+      num += +v * 2 ** (3 - i)
+    })
+    res += num.toString(16)
+    count += 4
+  }
+  return res
+}
+// 注意：2进制字符串转16进制时，如果用8位为单位转换的话，需要注意00000000或者0000xxxx等类型，会丢失高四位的0,比如00000001会被转为1而不是01
+function bin2byte (data) {
+  let arr = []
+  for(let i = 1; ;i++) {
+    let byte = data.slice((i - 1) * 8, i * 8)
+    if (!byte) break
+    arr.push(byte.split('').reverse())
+  }
+  return arr
+}
+function arr2string (arr) {
+  let s = ''
+  for (let x = 0; x < 5; x++) {
+    for (let y = 0; y < 5; y++) {
+      s += arr[y][x].join('')
+    }
+  }
+  return s
+}
+function sa2log(sa) {
+  let temp = arr2string(sa)
+  let t = bin2byte(temp)
+  let res = ''
+  for (let i = 0; i < t.length; i++) {
+    let byte = t[i]
+    res += bin2hex4(byte.slice(0, 4).reverse().join('')) + bin2hex4(byte.slice(4).reverse().join('')) + ((i + 1) % 16 === 0 ? '\n' : ' ')
+  }
+  return res
+}
 module.exports = {
   mod,
+  StrArrXOR,
+  bin2hex4,
+  bin2byte,
+  arr2string,
   // map1 means θ
   map1: function(sa = this.sa) {
     let C = [], D = []
-    for (let x = 0; x >= 0 && x < 5; x++) {
+    for (let x = 0; x < 5; x++) {
       C[x] = C[x] === undefined ? [] : C[x]
-      for (let z = 0; z >= 0 && z < this.w; z++) {
+      for (let z = 0; z < this.w; z++) {
         C[x][z] = sa[x][0][z] ^ sa[x][1][z] ^ sa[x][2][z] ^ sa[x][3][z] ^ sa[x][4][z]
       }
     }
-    for (let x = 0; x >= 0 && x < 5; x++) {
+    for (let x = 0; x < 5; x++) {
       D[x] = D[x] === undefined ? [] : D[x]
       for (let z = 0; z >= 0 && z < this.w; z++) {
-        D[x][z] = C[(x - 1) % 5, z] ^ C[(x + 1) % 5, (z - 1) % this.w]
+        D[x][z] = C[mod((x - 1), 5)][z] ^ C[mod((x + 1), 5)][mod((z - 1), this.w)]
       }
     }
-    for (let x = 0; x >= 0 && x < 5; x++) {
-      for (let y = 0; y >= 0 && y < 5; y++) {
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
         for (let z = 0; z >= 0 && z < this.w; z++) {
           sa[x][y][z] = sa[x][y][z] ^ D[x][z]
         }
       }
     }
+    let temp = sa2log(sa)
     return sa
   },
   // map2 means ρ
-  map2: function() {
+  map2: function(sa = this.sa) {
     // step 1
-    // for (let z = 0; z < this.w; z++) {
-    //   this.sa[0][0][z] = this.sa[0][0][z]
-    // }
+    let sa1 = [...sa]
+    for (let z = 0; z < this.w; z++) {
+      sa1[0][0][z] = sa[0][0][z]
+    }
     // step 2
     let [x, y] = [1, 0]
     // step 3
     for (let t = 0; t < 24; t++) {
       // a
       for (let z = 0; z < this.w; z++) {
-        let mod = z - (t + 1) * (t + 2) / 2
-        if ((z - (t + 1) * (t + 2) / 2) < 0) {
-          while(mod < 0) {
-            mod += this.w
-          }
-        } else {
-          mod = (z - (t + 1) * (t + 2) / 2) % this.w
-        }
-        this.sa[x][y][z] = this.sa[x][y][mod]
+        let temp = mod(z - (t + 1) * (t + 2) / 2, this.w)
+        sa1[x][y][z] = sa[x][y][temp]
       }
       // b
-      [x, y] = [y, (2 * x + 3 * y) % 5]
+      [x, y] = [y, mod((2 * x + 3 * y), 5)]
     }
     // step 4
-    return this.sa
+    let temp = sa2log(sa)
+    let ok = temp === res2
+    return sa1
   },
   // map3 means π
   map3: function() {
-    for (let x = 0; x >= 0 && x < 5; x++) {
+    for (let x = 0; x < 5; x++) {
       this.sa[x] = this.sa[x] === undefined ? [] : this.sa[x]
-      for (let y = 0; y >= 0 && y < 5; y++) {
+      for (let y = 0; y < 5; y++) {
         this.sa[x][y] = this.sa[x][y] === undefined ? [] : this.sa[x][y]
         for (let z = 0; z >= 0 && z < this.w; z++) {
           this.sa[x][y][z] = this.sa[(x + 3 * y) % 5][x][z]
@@ -90,9 +161,9 @@ module.exports = {
   },
   // map4 means χ
   map4: function() {
-    for (let x = 0; x >= 0 && x < 5; x++) {
+    for (let x = 0; x < 5; x++) {
       this.sa[x] = this.sa[x] === undefined ? [] : this.sa[x]
-      for (let y = 0; y >= 0 && y < 5; y++) {
+      for (let y = 0; y < 5; y++) {
         this.sa[x][y] = this.sa[x][y] === undefined ? [] : this.sa[x][y]
         for (let z = 0; z >= 0 && z < this.w; z++) {
           this.sa[x][y][z] = this.sa[x][y][z] ^ ((this.sa[(x + 1) % 5][y][z] ^ 1) * this.sa[(x + 2) % 5][y][z])
@@ -123,48 +194,5 @@ module.exports = {
     let j = mod(- m - 2, x)
     return '1' + '0'.repeat(j) + '1'
   },
-  StrArrXOR (a, b) {
-    if (a.length !== b.length) throw new Error('无法对不同长度的两串字符进行异或');
-    let res = ''
-    for (let i = 0; i < a.length; i++) {
-      res += a[i] ^ b[i]
-    }
-    return res
-  },
-  bin2hex4 (data) {
-    let res = ''
-    let count = 0
-    while (data[count]) {
-      let num = 0
-      let arr = data.slice(count, count + 4).split('')
-      arr.forEach((v, i) => {
-        num += +v * 2 ** (3 - i)
-      })
-      res += num.toString(16)
-      count += 4
-    }
-    return res
-  },
-  bin2hex8 (data) {
-    let arr = []
-    for(let i = 1; ;i++) {
-      let byte = data.slice((i - 1) * 8, i * 8)
-      if (!byte) break
-      arr.push(byte.split('').reverse())
-    }
-    let res = ''
-    for (let count in arr) {
-      let num = 0
-      if (arr[count].join('') === '00000000') {
-        res += '00'
-        continue
-      }
-      arr[count].forEach((v, i) => {
-        num += +v * 2 ** (7 - i)
-      })
-      // res += Buffer.from([num]).toString()
-      res += num.toString(16)
-    }
-    return res
-  }
+
 }

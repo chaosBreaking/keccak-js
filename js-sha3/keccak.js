@@ -80,7 +80,7 @@ class Keccak {
     // 拼接
     return data + temp
   }
-  initSa () {
+  initSa (str) {
     let sa = []
     for (let x = 0; x < 5; x++) {
       if (!sa[x]) sa[x] = []
@@ -88,11 +88,12 @@ class Keccak {
         if (!sa[x][y]) sa[x][y] = []
         // sa[x][y] = this.S.slice(this.w * (5 * y + x), this.w * (5 * y + x) + 64) || '0'.repeat(64)
         for (let z = 0; z < this.w; z++) {
-          sa[x][y][z] = this.S[this.w * (5 * y + x) + z]
+          sa[x][y][z] = str[this.w * (5 * y + x) + z]
         }
       }
     }
     this.sa = sa
+    return sa
   }
   padSaByte (sa = this.sa, data = this.data) {
     this.S = ''
@@ -147,16 +148,16 @@ class Keccak {
     }
     return s
   }
-  binStr2Byte (data = this.S) {
+  binStr2Byte (data) {
     return util.bin2hex(data)
   }
-  rnd (ir) {
-    util.map1.call(this)
-    util.map2.call(this)
-    util.map3.call(this)
-    util.map4.call(this)
-    util.map5.call(this, ir)
-    return this.sa
+  rnd (sa, ir) {
+    sa = util.map1.call(this, sa)
+    sa = util.map2.call(this, sa)
+    sa = util.map3.call(this, sa)
+    sa = util.map4.call(this, sa)
+    sa = util.map5.call(this, sa, ir)
+    return sa
   }
   rn (i, ir) {
     util['map'+ i].call(this, ir)
@@ -166,18 +167,10 @@ class Keccak {
     return function(str)  {
       this.initSa(str)
       for (let ir = 12 + 2 * this.l - nr; ir <= 12 + 2 * this.l - 1; ir++) {
-        this.rnd(ir)
+        this.sa = this.rnd(this.sa, ir)
       }
-      return this.array2String()
+      return util.arr2string(this.sa)
     }.bind(this)
-  }
-  keccak_f (A) {
-    // this.string2Array(A)
-    for (let i = 0; i < this.nr; i++) {
-      this.sa = this.rnd(A, RC[i])
-    }
-    return this.sa
-    // return this.array2String()
   }
   /* 
     SPONGE[f, pad, r](N, d)
