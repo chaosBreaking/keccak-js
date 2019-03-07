@@ -13,7 +13,8 @@ const rc = function(t) {
   }
   return R[0]
 }
-function mod (a, b) {
+
+function mod(a, b) {
   if (a > 0) return a % b
   while (a < 0) {
     a += b
@@ -119,8 +120,51 @@ module.exports = {
   pad101: function(x, m) {
     if (x <= 0 || m < 0) throw new Error(`Pad Error: Invalid input x: ${x} or m: ${m}`)
     // j = (-m-2) mod x
-    let j = mod(-m - 2, x)
-    return 1 + '0'.repeat(j) + '1'
+    let j = mod(- m - 2, x)
+    return '1' + '0'.repeat(j) + '1'
+  },
+  StrArrXOR (a, b) {
+    if (a.length !== b.length) throw new Error('无法对不同长度的两串字符进行异或');
+    let res = ''
+    for (let i = 0; i < a.length; i++) {
+      res += a[i] ^ b[i]
+    }
+    return res
+  },
+  bin2hex4 (data) {
+    let res = ''
+    let count = 0
+    while (data[count]) {
+      let num = 0
+      let arr = data.slice(count, count + 4).split('')
+      arr.forEach((v, i) => {
+        num += +v * 2 ** (3 - i)
+      })
+      res += num.toString(16)
+      count += 4
+    }
+    return res
+  },
+  bin2hex8 (data) {
+    let arr = []
+    for(let i = 1; ;i++) {
+      let byte = data.slice((i - 1) * 8, i * 8)
+      if (!byte) break
+      arr.push(byte.split('').reverse())
+    }
+    let res = ''
+    for (let count in arr) {
+      let num = 0
+      if (arr[count].join('') === '00000000') {
+        res += '00'
+        continue
+      }
+      arr[count].forEach((v, i) => {
+        num += +v * 2 ** (7 - i)
+      })
+      // res += Buffer.from([num]).toString()
+      res += num.toString(16)
+    }
+    return res
   }
-
 }

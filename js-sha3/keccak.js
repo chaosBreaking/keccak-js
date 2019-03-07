@@ -1,6 +1,8 @@
 'use strict'
 
 const util = require('./util.js')
+const KECCAKC_TYPE = [448, 512, 768, 1024]
+const SHA3_TYPE = [224, 256, 384, 512]
 // Round constants
 const RC = [
   0x0000000000000001,
@@ -50,10 +52,13 @@ class Keccak {
     this.sa = []
     this.q = 0
     this.S = ''
+    this.c = 0
   }
 
   init (message, c) {
+    if (!c || !Number.isSafeInteger(c)) throw new Error('缺少必要参数 C')
     this.meta = Buffer.from(message)
+    this.c = c
     let r = this.b - c
     this.q = (r / 8) - util.mod(message.length, r/8)
   }
@@ -69,7 +74,11 @@ class Keccak {
     return this.data
   }
   bitPad (data) {
-
+    if (typeof data !== 'string') throw new Error('bit填充的输入必须为字符串')
+    // 按照pad10*1的规则进行位填充 N为二进制表示的字符串
+    let temp = util.pad101(this.b - this.c, data.length)
+    // 拼接
+    return data + temp
   }
   initSa () {
     let sa = []
@@ -116,9 +125,6 @@ class Keccak {
     }
     return this.S
   }
-  absorb (c) {
-    let n = this.data.length / (this.b - c)
-  }
   getKeccak(c) {
     return function k(m) {
       this.init(m, c)
@@ -127,12 +133,6 @@ class Keccak {
       this.initSa()
     }.bind(this)
   }
-  /**
-   * Convert a state array A to a String value
-   *
-   * @param {*} 
-   * @memberof Keccak
-  */
   array2String () {
     let s = ''
     for (let x = 0; x >= 0 && x < 5; x++) {
@@ -146,6 +146,9 @@ class Keccak {
       }
     }
     return s
+  }
+  binStr2Byte (data = this.S) {
+    return util.bin2hex(data)
   }
   rnd (ir) {
     util.map1.call(this)
@@ -161,7 +164,7 @@ class Keccak {
   keccak_p (b, nr) {
     // keccak-p[b, nr](S)
     return function(str)  {
-      this.string2Array(str)
+      this.initSa(str)
       for (let ir = 12 + 2 * this.l - nr; ir <= 12 + 2 * this.l - 1; ir++) {
         this.rnd(ir)
       }
@@ -176,7 +179,46 @@ class Keccak {
     return this.sa
     // return this.array2String()
   }
-  sponge(func, pad = this.padding, r, N, d) {
+  /* 
+    SPONGE[f, pad, r](N, d)
+    c: capacity;
+    r: rate;
+    pad(x,m): x > 0(int), m >= 0 (int)
+  */
+  sponge(func, pad = this.bitPad, r, N, d) {
+    // 1
+    let P = pad.call(this, N)
+    // 2
+    let n = Math.floor(P.length / r)
+    // 3
+    let c = this.b - r
+    // 4
+    let PArr = [];
+    for (let i = 0; ; i++) {
+      if (P[i * r] && P[i * r + r]) {
+        PArr.push(P.slice(i * r, i * r + r))
+      }
+      else {
+        PArr.push(P.slice(i * r))
+        break
+      }
+    }
+    // 5
+    let S = '0'.repeat(this.b)
+    // 6
+    for (let i = 0; i < n; i++) {
+      let xoredS = util.StrArrXOR(S, (PArr[i] + '0'.repeat(c)))
+      S = func.call(this, xoredS)
+    }
+    // 7
+    let Z = ''
+    while(1) {
+      Z = Z + S.slice(0, r)
+      if (d <= Z.length) return Z.slice(0, d)
+      S = func.call(this, S)
+    }
+  }
+  sponge_byte(func, pad = this.padding, r, N, d) {
     // step 1
     /* 
       SPONGE[f, pad, r](N, d)
@@ -201,7 +243,7 @@ class Keccak {
     }
     let S = '0'.repeat(this.b)
     for (let i = 0; i < n; i++) {
-      let xoredS = Keccak.StrArrXOR(S, (PArr[i] + '0'.repeat(c)))
+      let xoredS = util.StrArrXOR(S, (PArr[i] + '0'.repeat(c)))
       S = func(xoredS)
     }
     let Z = ''
@@ -212,18 +254,28 @@ class Keccak {
     }
   }
   keccak_c (c) {
-    // keccak[c] === keccak_p[b, 12+2l], b = 1600
+    if (!KECCAKC_TYPE.includes(c)) throw new Error('Keccak[c]: Invalid digest length: ', d)
+    this.c = c
     return function(N, d) {
-      return this.sponge( this.keccak_p(this.b, 24), util.pad101, 1600 - c, N, d)
+      if (typeof N !== 'string') throw new Error('Keccak[c]: Input must be string')
+      return this.sponge( this.keccak_p(1600, 24), this.bitPad, 1600 - c, N, d)
     }.bind(this)
   }
-  static StrArrXOR (a, b) {
-    if (a.length !== b.length) throw new Error('无法对不同长度的两串字符进行异或');
-    let res = ''
-    for (let i = 0; i < a.length; i++) {
-      res += a[i] ^ b[i]
+  /* 
+    d -> {
+      224, 256, 384, 512
     }
-    return res
+    c = 2d
+  */
+  sha3 (d, m) {
+    if (!SHA3_TYPE.includes(d)) throw new Error('SHA3: Invalid digest length: ', d)
+    if (typeof m !== 'string') {
+      if (Buffer.isBuffer(m)) {
+        m = this.trans2BitString (m)
+      }
+      throw new Error('SHA3: Invalid input')
+    }
+    return this.keccak_c(2 * d)(m + '01', d)
   }
 }
 // let k = new Keccak(1600)
