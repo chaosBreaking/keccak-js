@@ -42,7 +42,6 @@ class Keccak {
       if (!sa[x]) sa[x] = []
       for (let y = 0; y < 5; y++) {
         if (!sa[x][y]) sa[x][y] = []
-        // sa[x][y] = this.S.slice(this.w * (5 * y + x), this.w * (5 * y + x) + 64) || '0'.repeat(64)
         for (let z = 0; z < this.w; z++) {
           sa[x][y][z] = str[this.w * (5 * y + x) + z]
         }
@@ -68,7 +67,7 @@ class Keccak {
     }
   }
   trans2BitString (data = this.data) {
-    this.S = ''
+    let res = ''
     let laneByteSize = this.w / 8
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
@@ -76,11 +75,11 @@ class Keccak {
         let index = x * 5 + y + 1
         let bytesLane = data.slice((index - 1) * laneByteSize, index * laneByteSize)
         for (let i = 0; i < bytesLane.length; i++) {
-          this.S += bytesLane[i].toString(2).padStart(8, '0').split('').reverse().join('')
+          res += bytesLane[i].toString(2).padStart(8, '0').split('').reverse().join('')
         }
       }
     }
-    return this.S
+    return res
   }
   array2String () {
     let s = ''
@@ -186,11 +185,18 @@ class Keccak {
     }
     c = 2d
   */
-  sha3 (d, m) {
+  sha3 (d) {
     if (!SHA3_TYPE.includes(d)) throw new Error('SHA3: Invalid digest length: ', d)
-    m = this.trans2BitString(Buffer.from(String(m)))
-    return util.bin2hex8(this.keccak_c(2 * d)(m + '01', d))
+    return function (m) {
+      m = this.trans2BitString(Buffer.from(String(m)))
+      return util.bin2hex8(this.keccak_c(2 * d)(m + '01', d))
+    }.bind(this)
   }
 }
 
-module.exports = Keccak
+module.exports = {
+  sha3_224: (() => new Keccak().sha3(224))(),
+  sha3_256: (() => new Keccak().sha3(256))(),
+  sha3_384: (() => new Keccak().sha3(384))(),
+  sha3_512: (() => new Keccak().sha3(512))(),
+}
