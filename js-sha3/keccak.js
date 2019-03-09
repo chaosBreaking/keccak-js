@@ -144,7 +144,7 @@ class Keccak {
     }
   }
   keccak_c (c) {
-    if (!KECCAKC_TYPE.includes(c)) throw new Error('Keccak[c]: Invalid digest length: ', d)
+    if (!KECCAKC_TYPE.includes(c)) throw new Error('Keccak[c]: Invalid digest length: ', c)
     this.c = c
     return function (N, d) {
       if (typeof N !== 'string') throw new Error('Keccak[c]: Input must be string')

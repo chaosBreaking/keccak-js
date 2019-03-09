@@ -1,8 +1,8 @@
 'use strict'
 const deepCopy = require('deepcopy')
-const rc = function(t) {
+const rc = function (t) {
   if (t % 255 === 0) return 1
-  let R = [1,0,0,0,0,0,0,0]
+  let R = [1, 0, 0, 0, 0, 0, 0, 0]
   for (let i = 1; i <= t % 255; i++) {
     R = [0, ...R]
     R[0] = R[0] ^ R[8]
@@ -15,15 +15,7 @@ const rc = function(t) {
   return R[0]
 }
 const rcRes = '1000000010110001111010000111111110010000101001111101010101110000011000101011001100101111110111100110111011100101010010100010010110100011001110011110001101100001000101110101111011011111000011010011010110110101000001001110110010010011000000111010010001110001'
-const r = [
-  [0, 36, 3, 41, 18],
-  [1, 44, 10, 45, 2],
-  [62, 6, 43, 15, 61],
-  [28, 55, 25, 21, 56],
-  [27, 20, 39, 8, 14]
-]
-
-function mod(a, b) {
+function mod (a, b) {
   if (a > 0) return a % b
   while (a < 0) {
     a += b
@@ -31,7 +23,7 @@ function mod(a, b) {
   return a
 }
 function StrArrXOR (a, b) {
-  if (a.length !== b.length) throw new Error('无法对不同长度的两串字符进行异或');
+  if (a.length !== b.length) throw new Error('无法对不同长度的两串字符进行异或')
   let res = ''
   for (let i = 0; i < a.length; i++) {
     res += a[i] ^ b[i]
@@ -56,7 +48,7 @@ function bin2hex8 (data) {
   let res = ''
   let count = 0
   while (data[count]) {
-    let numa = 0 , numb = 0
+    let numa = 0; let numb = 0
     let byte = data.slice(count, count + 8).split('').reverse()
     let [a, b] = [byte.slice(0, 4), byte.slice(4)]
     a.forEach((v, i) => {
@@ -73,7 +65,7 @@ function bin2hex8 (data) {
 // 注意：2进制字符串转16进制时，如果用8位为单位转换的话，需要注意00000000或者0000xxxx等类型，会丢失高四位的0,比如00000001会被转为1而不是01
 function bin2byte (data) {
   let arr = []
-  for(let i = 1; ;i++) {
+  for (let i = 1; ;i++) {
     let byte = data.slice((i - 1) * 8, i * 8)
     if (!byte) break
     arr.push(byte.split('').reverse())
@@ -89,7 +81,7 @@ function arr2string (arr) {
   }
   return s
 }
-function sa2log(sa) {
+function sa2log (sa) {
   let temp = arr2string(sa)
   let t = bin2byte(temp)
   let res = ''
@@ -110,8 +102,8 @@ module.exports = {
   arr2string,
   sa2log,
   // map1 means θ
-  map1: function(sa = this.sa) {
-    let C = [], D = []
+  map1: function (sa = this.sa) {
+    let C = []; let D = []
     for (let x = 0; x < 5; x++) {
       C[x] = C[x] === undefined ? [] : C[x]
       for (let z = 0; z < this.w; z++) {
@@ -134,7 +126,7 @@ module.exports = {
     return sa
   },
   // map2 means ρ
-  map2: function(sa = this.sa) {
+  map2: function (sa = this.sa) {
     // 巨坑。。。需要深拷贝sa！
     // step 1
     let newSa = deepCopy(sa)
@@ -153,7 +145,7 @@ module.exports = {
     return newSa
   },
   // map3 means π
-  map3: function(sa = this.sa) {
+  map3: function (sa = this.sa) {
     let newSa = deepCopy(sa)
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
@@ -166,12 +158,12 @@ module.exports = {
     return newSa
   },
   // map4 means χ
-  map4: function(sa = this.sa) {
+  map4: function (sa = this.sa) {
     let newSa = deepCopy(sa)
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
         for (let z = 0; z >= 0 && z < this.w; z++) {
-          newSa[x][y][z] = sa[x][y][z] ^ ( (sa[(x + 1) % 5][y][z] ^ 1) * sa[(x + 2) % 5][y][z] )
+          newSa[x][y][z] = sa[x][y][z] ^ ((sa[(x + 1) % 5][y][z] ^ 1) * sa[(x + 2) % 5][y][z])
         }
       }
     }
@@ -179,10 +171,10 @@ module.exports = {
     return newSa
   },
   // map5 means ι
-  map5: function(sa = this.sa, ir) {
+  map5: function (sa = this.sa, ir) {
     let RC = '0'.repeat(this.w).split('')
     for (let j = 0; j <= +this.l; j++) {
-      RC[2**j - 1] = rcRes[j + 7 * ir]
+      RC[2 ** j - 1] = rcRes[j + 7 * ir]
     }
     for (let z = 0; z < this.w; z++) {
       sa[0][0][z] ^= RC[z]
@@ -192,13 +184,13 @@ module.exports = {
   /**
    * positive int x
    * non-negative int m
-   * @returns {string} P that m + len(P) = k·x 
+   * @returns {string} P that m + len(P) = k·x
    */
-  pad101: function(x, m) {
+  pad101: function (x, m) {
     if (x <= 0 || m < 0) throw new Error(`Pad Error: Invalid input x: ${x} or m: ${m}`)
     // j = (-m-2) mod x
-    let j = mod(- m - 2, x)
+    let j = mod(-m - 2, x)
     return '1' + '0'.repeat(j) + '1'
-  },
+  }
 
 }
