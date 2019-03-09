@@ -68,6 +68,13 @@ class Keccak {
   }
   trans2BitString (data = this.data) {
     let res = ''
+    for (let u of data) {
+      res += u.toString(2).padStart(8, '0').split('').reverse().join('')
+    }
+    return res
+  }
+  trans2BitStrByLane (data = this.data) {
+    let res = ''
     let laneByteSize = this.w / 8
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
@@ -96,7 +103,7 @@ class Keccak {
     return s
   }
   binStr2Byte (data) {
-    return util.bin2hex(data)
+    return util.bin2hex4(data)
   }
   rnd (sa, ir) {
     sa = util.map1.call(this, sa)
