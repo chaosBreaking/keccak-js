@@ -14,6 +14,7 @@ const rc = function(t) {
   }
   return R[0]
 }
+const rcRes = '1000000010110001111010000111111110010000101001111101010101110000011000101011001100101111110111100110111011100101010010100010010110100011001110011110001101100001000101110101111011011111000011010011010110110101000001001110110010010011000000111010010001110001'
 const r = [
   [0, 36, 3, 41, 18],
   [1, 44, 10, 45, 2],
@@ -21,7 +22,6 @@ const r = [
   [28, 55, 25, 21, 56],
   [27, 20, 39, 8, 14]
 ]
-const mapXY = [2, 3, 4, 0, 1]
 
 function mod(a, b) {
   if (a > 0) return a % b
@@ -100,6 +100,8 @@ function sa2log(sa) {
   return res
 }
 module.exports = {
+  rc,
+  rcRes,
   mod,
   StrArrXOR,
   bin2hex4,
@@ -129,9 +131,6 @@ module.exports = {
         }
       }
     }
-    // let testres = sa2log(sa)
-    // let ok = res1.split(' ').join('') == testres.split(' ').join('')
-    // ok ? console.log('map1 结果正确！') : console.error('map1 结果错误！')
     return sa
   },
   // map2 means ρ
@@ -151,10 +150,6 @@ module.exports = {
       // b
       [x, y] = [y, mod((2 * x + 3 * y), 5)]
     }
-    // step 4
-    // let testres = sa2log(newSa)
-    // let ok = res2.split(' ').join('') == testres.split(' ').join('')
-    // ok ? console.log('map2 结果正确！') : console.error('map2 结果错误！')
     return newSa
   },
   // map3 means π
@@ -185,15 +180,13 @@ module.exports = {
   },
   // map5 means ι
   map5: function(sa = this.sa, ir) {
-    // let newSa = deepCopy(sa)
-    let RC = '0'.repeat(this.w).split()
-    for (let j = 0; j <= this.l; j++) {
-      RC[2**j - 1] = rc(j + 7 * ir)
+    let RC = '0'.repeat(this.w).split('')
+    for (let j = 0; j <= +this.l; j++) {
+      RC[2**j - 1] = rcRes[j + 7 * ir]
     }
     for (let z = 0; z < this.w; z++) {
       sa[0][0][z] ^= RC[z]
     }
-    // let testres = sa2log(sa)
     return sa
   },
   /**

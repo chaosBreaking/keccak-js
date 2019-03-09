@@ -10,7 +10,7 @@ class Keccak {
       throw new Error('invalid param b')
     }
     this.b = b
-    this.w = b / 25   // lane size in bit
+    this.w = b / 25 // lane size in bit
     this.l = Math.log2(this.w).toFixed(0)
     this.nr = 12 + 2 * this.l
     this.sa = []
@@ -23,7 +23,7 @@ class Keccak {
     switch (this.q) {
       case 1: pad = Buffer.from([0x86]); break
       case 2: pad = Buffer.from([0x06, 0x80]); break
-      default: let repCount = this.q - 2;
+      default: let repCount = this.q - 2
         pad = Buffer.from([0x06, ...Array(repCount).fill(0), 0x80]); break
     }
     this.data = Buffer.concat([this.meta, pad])
@@ -88,23 +88,6 @@ class Keccak {
     }
     return res
   }
-  array2String () {
-    let s = ''
-    for (let x = 0; x >= 0 && x < 5; x++) {
-      this.sa[x] = this.sa[x] === undefined ? [] : this.sa[x]
-      for (let y = 0; y >= 0 && y < 5; y++) {
-        this.sa[x][y] = this.sa[x][y] === undefined ? [] : this.sa[x][y]
-        for (let z = 0; z >= 0 && z < this.w; z++) {
-          if (typeof this.sa[x][y][z] === 'undefined') s = s.concat('')
-          else s = s.concat(this.sa[x][y][z])
-        }
-      }
-    }
-    return s
-  }
-  binStr2Byte (data) {
-    return util.bin2hex4(data)
-  }
   rnd (sa, ir) {
     sa = util.map1.call(this, sa)
     sa = util.map2.call(this, sa)
@@ -113,11 +96,8 @@ class Keccak {
     sa = util.map5.call(this, sa, ir)
     return sa
   }
-  rn (i, ir) {
-    util['map'+ i].call(this, ir)
-  }
   keccak_p (b, nr) {
-    return function(str)  {
+    return function (str) {
       this.initSa(str)
       for (let ir = 12 + 2 * this.l - nr; ir <= 12 + 2 * this.l - 1; ir++) {
         this.sa = this.rnd(this.sa, ir)
@@ -125,13 +105,13 @@ class Keccak {
       return util.arr2string(this.sa)
     }.bind(this)
   }
-  /* 
+  /*
     SPONGE[f, pad, r](N, d)
     c: capacity;
     r: rate;
     pad(x,m): x > 0(int), m >= 0 (int)
   */
-  sponge(func, pad = this.bitPad, r, N, d) {
+  sponge (func, pad = this.bitPad, r, N, d) {
     // 1
     let P = pad.call(this, N)
     // 2
@@ -139,12 +119,11 @@ class Keccak {
     // 3
     let c = this.b - r
     // 4
-    let PArr = [];
+    let PArr = []
     for (let i = 0; ; i++) {
       if (P[i * r] && P[i * r + r]) {
         PArr.push(P.slice(i * r, i * r + r))
-      }
-      else {
+      } else {
         PArr.push(P.slice(i * r))
         break
       }
@@ -158,35 +137,21 @@ class Keccak {
     }
     // 7
     let Z = ''
-    while(1) {
+    while (1) {
       Z = Z + S.slice(0, r)
       if (d <= Z.length) return Z.slice(0, d)
       S = func.call(this, S)
     }
   }
-  sponge_byte(func, pad = this.bytePad, r, N, d) {
-    // step 1
-    /* 
-      SPONGE[f, pad, r](N, d)
-      c: capacity;
-      r: rate;
-      pad(x,m): x > 0(int), m >= 0 (int)
-    */
-    this.meta = Buffer.from(N)
-    this.c = this.b - r
-    this.q = (r / 8) - util.mod(N.length, r/8)
-    this.pad(N)
-    let P = this.trans2BitString()
-  }
   keccak_c (c) {
     if (!KECCAKC_TYPE.includes(c)) throw new Error('Keccak[c]: Invalid digest length: ', d)
     this.c = c
-    return function(N, d) {
+    return function (N, d) {
       if (typeof N !== 'string') throw new Error('Keccak[c]: Input must be string')
-      return this.sponge( this.keccak_p(1600, 24), this.bitPad, 1600 - c, N, d)
+      return this.sponge(this.keccak_p(1600, 24), this.bitPad, 1600 - c, N, d)
     }.bind(this)
   }
-  /* 
+  /*
     d -> {
       224, 256, 384, 512
     }
@@ -205,5 +170,5 @@ module.exports = {
   sha3_224: (() => new Keccak().sha3(224))(),
   sha3_256: (() => new Keccak().sha3(256))(),
   sha3_384: (() => new Keccak().sha3(384))(),
-  sha3_512: (() => new Keccak().sha3(512))(),
+  sha3_512: (() => new Keccak().sha3(512))()
 }
