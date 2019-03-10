@@ -169,7 +169,7 @@ class Keccak {
       128, 256
     }
     c = 2d
-  */  
+  */
   shake (d) {
     if (!SHAKE_TYPE.includes(d)) throw new Error('SHAKE: Invalid digest length: ', d)
     return function (m, outLength = 2 * d) {
@@ -188,5 +188,5 @@ module.exports = {
   sha3_384: (() => new Keccak().sha3(384))(),
   sha3_512: (() => new Keccak().sha3(512))(),
   shake128: (() => new Keccak().shake(128))(),
-  shake256: (() => new Keccak().shake(256))(),
+  shake256: (() => new Keccak().shake(256))()
 }
