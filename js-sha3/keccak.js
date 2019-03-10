@@ -1,9 +1,9 @@
 'use strict'
 
 const util = require('./util.js')
-const KECCAKC_TYPE = [448, 512, 768, 1024]
+const KECCAKC_TYPE = [256, 448, 512, 768, 1024]
 const SHA3_TYPE = [224, 256, 384, 512]
-
+const SHAKE_TYPE = [128, 256]
 class Keccak {
   constructor (b = 1600) {
     if (![25, 50, 100, 200, 400, 800, 1600].includes(b)) {
@@ -160,15 +160,33 @@ class Keccak {
   sha3 (d) {
     if (!SHA3_TYPE.includes(d)) throw new Error('SHA3: Invalid digest length: ', d)
     return function (m) {
-      m = this.trans2BitString(Buffer.from(String(m)))
+      m = Buffer.isBuffer(m) ? this.trans2BitString(m) : this.trans2BitString(Buffer.from(String(m)))
       return util.bin2hex8(this.keccak_c(2 * d)(m + '01', d))
+    }.bind(this)
+  }
+  /*
+    d -> {
+      128, 256
+    }
+    c = 2d
+  */  
+  shake (d) {
+    if (!SHAKE_TYPE.includes(d)) throw new Error('SHAKE: Invalid digest length: ', d)
+    return function (m, outLength = 2 * d) {
+      if (!Number.isSafeInteger(+outLength)) throw new Error('SHAKE: Invalid output length')
+      m = Buffer.isBuffer(m) ? this.trans2BitString(m) : this.trans2BitString(Buffer.from(String(m)))
+      return util.bin2hex8(this.keccak_c(2 * d)(m + '1111', +outLength))
     }.bind(this)
   }
 }
 
 module.exports = {
+  keccak256: new Keccak().keccak_c(256),
+  keccak512: new Keccak().keccak_c(512),
   sha3_224: (() => new Keccak().sha3(224))(),
   sha3_256: (() => new Keccak().sha3(256))(),
   sha3_384: (() => new Keccak().sha3(384))(),
-  sha3_512: (() => new Keccak().sha3(512))()
+  sha3_512: (() => new Keccak().sha3(512))(),
+  shake128: (() => new Keccak().shake(128))(),
+  shake256: (() => new Keccak().shake(256))(),
 }

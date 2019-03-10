@@ -91,16 +91,24 @@ function sa2log (sa) {
   }
   return res
 }
+function trans2BitString (data) {
+  let res = ''
+  for (let u of data) {
+    res += u.toString(2).padStart(8, '0').split('').reverse().join('')
+  }
+  return res
+}
 module.exports = {
   rc,
   rcRes,
   mod,
+  sa2log,
   StrArrXOR,
   bin2hex4,
   bin2hex8,
   bin2byte,
   arr2string,
-  sa2log,
+  trans2BitString,
   // map1 means θ
   map1: function (sa = this.sa) {
     let C = []; let D = []
