@@ -24,5 +24,8 @@
   "bugs": {
     "url": "https://github.com/chaosBreaking/keccak-js/issues"
   },
-  "homepage": "https://github.com/chaosBreaking/keccak-js#readme"
+  "homepage": "https://github.com/chaosBreaking/keccak-js#readme",
+  "dependencies": {
+    "deepcopy": "^2.0.0"
+  }
 }
