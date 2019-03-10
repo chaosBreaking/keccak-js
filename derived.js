@@ -38,11 +38,9 @@ const encode_string = S => 0 <= S.length && S.length < 2**1023 ? left_encode(S.l
 const cShake = type => (X, L, N = '', S = '', option = {}) => {
 	if (!Object.keys(funcs).includes(`shake${type}`) || !Object.keys(funcs).includes(`keccak${2 * type}`)) throw new Error('Invalid Function type: ' + type)
 	if (S === '' && N === '') return funcs[`shake${type}`](X, L)
-	if (option && !option.kmac) {
-		X = Buffer.isBuffer(X) ? util.trans2BitString(X) : util.trans2BitString(Buffer.from(String(X)))
-		N = Buffer.isBuffer(N) ? util.trans2BitString(N) : util.trans2BitString(Buffer.from(String(N)))
-		S = Buffer.isBuffer(S) ? util.trans2BitString(S) : util.trans2BitString(Buffer.from(String(S)))
-	}
+	X = Buffer.isBuffer(X) ? util.trans2BitString(X) : util.trans2BitString(Buffer.from(String(X)))
+	N = Buffer.isBuffer(N) ? util.trans2BitString(N) : util.trans2BitString(Buffer.from(String(N)))
+	S = Buffer.isBuffer(S) ? util.trans2BitString(S) : util.trans2BitString(Buffer.from(String(S)))
 	let encodedStr = bytepad(encode_string(N) + encode_string(S), Rate[type])
 	return util.bin2hex8(funcs[`keccak${2 * type}`](encodedStr + X + '00', L))
 }
@@ -52,9 +50,8 @@ const kmac = type => (K, X, L, S = '') => {
 	S = util.trans2BitString(Buffer.from(String(S)))
 	let F = '11010010101100101000001011000010' // util.trans2BitString(Buffer.from('KMAC'))
 	let newX = bytepad(encode_string(K), Rate[type]) + X + right_encode(+L)
-	// let encodedStr = bytepad(encode_string(F) + encode_string(S), Rate[type])
-	// return util.bin2hex8(funcs[`keccak${2 * type}`](encodedStr + newX + '00', L))
-	return cShake(type)(newX, L, F, S, {kmac: true})
+	let encodedStr = bytepad(encode_string(F) + encode_string(S), Rate[type])
+	return util.bin2hex8(funcs[`keccak${2 * type}`](encodedStr + newX + '00', L))
 }
 module.exports = {
 	cShake,
