@@ -35,7 +35,7 @@ const left_encode = x => pre_encode(x).join('')
 const right_encode = x => pre_encode(x).reverse().join('')
 const encode_string = S => S.length >= 0 && S.length < 2 ** 1023 ? left_encode(S.length) + S : new Error('Invalid input string')
 
-const cShake = type => (!Object.keys(funcs).includes(`shake${type}`) || !Object.keys(funcs).includes(`keccak${2 * type}`))
+const cShake = type => (!funcs[`shake${type}`] || !funcs[`keccak${2 * type}`])
   ? new Error('Invalid Function type: ' + type) : (X, L, N = '', S = '', option = {}) => {
     if (!Number.isSafeInteger(L)) throw new Error('Invalid Input L')
     if (S === '' && N === '') return funcs[`shake${type}`](X, L)

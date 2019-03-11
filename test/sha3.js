@@ -17,9 +17,13 @@ const arr = [
 	'many symbols like this @#$%^&*(&$%^&U&IYBY&!',
 	'long long'.repeat(2048)
 ]
-
+let f = true
+console.log(`------------------------ sha3.js 测试 ------------------------\n`)
 arr.forEach((v, i) => {
 	Object.keys(funcs).forEach( funcName => {
-		console.log('测试组', i + 1, st[funcName](v) === funcs[funcName](v) ? '通过' : '不通过')
+		let res = st[funcName](v) === funcs[funcName](v)
+		console.log('测试组', i + 1, res ? '通过' : '不通过')
+		if (!res) f = false
 	})
 })
+console.log(f ? `测试结束并通过 √` : `测试结束，有错误 ×`)

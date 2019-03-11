@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./test/sha3.js && node ./test/cshake.js && node ./test/kmac.js"
   },
   "repository": {
     "type": "git",

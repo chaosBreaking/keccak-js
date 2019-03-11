@@ -47,8 +47,8 @@ const arr = [
 	},
 ]
 let f = true
+console.log(`------------------------ cshake.js 测试 ------------------------\n`)
 arr.forEach((v, index) => {
-	console.log(`-----------------------------------------------\n`)
 	console.log(`测试集${index + 1}结果`)
 	lens.forEach(l => {
 		let r1 = cshake128(v.X, l, v.N, v.S) 
