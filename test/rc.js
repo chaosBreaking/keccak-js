@@ -25,19 +25,19 @@ const t = require('../util').rcRes
 // 	return f = false
 // }
 // console.log(f)
-let ir = 0,L = 6
-for(let l = 0; l <= L ; l++) {
-let m = new Map()
-for (let ir = 0; ir < 24; ir++) {
-	let RC = '0'.repeat(64).split('')
-	for (let j = 0; j <= l; j++) {
-		RC[2**j - 1] = t[j + 7 * ir]
-	}
-	m.set(ir, RC)
-}
-console.log('----------------- L === ',l,'------------------\n')
-m.forEach((v, k) => {
-	console.log(k,' ->', v.join(''),'  长度 :',v.length)
-})
-console.log('-----------------------------------------------\n')
+let ir = 0; let L = 6
+for (let l = 0; l <= L; l++) {
+  let m = new Map()
+  for (let ir = 0; ir < 24; ir++) {
+    let RC = '0'.repeat(64).split('')
+    for (let j = 0; j <= l; j++) {
+      RC[2 ** j - 1] = t[j + 7 * ir]
+    }
+    m.set(ir, RC)
+  }
+  console.log('----------------- L === ', l, '------------------\n')
+  m.forEach((v, k) => {
+    console.log(k, ' ->', v.join(''), '  长度 :', v.length)
+  })
+  console.log('-----------------------------------------------\n')
 }
