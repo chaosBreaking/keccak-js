@@ -35,7 +35,7 @@ const str2Buf = S => {
 }
 
 function hmac (type = 224) {
-  if (!funcs[type]) throw new Error('Invalid function type')
+  if (!funcs[`sha${type}`]) throw new Error('Invalid function type')
   let hash = funcs[`sha${type}`]
   return (key, message) => {
     message = Buffer.from(String(message))
@@ -50,4 +50,9 @@ function hmac (type = 224) {
   }
 }
 
-module.exports = { hmac, str2Buf }
+module.exports = {
+  hmac224: hmac(224),
+  hmac256: hmac(256),
+  hmac384: hmac(384),
+  hmac512: hmac(512),
+}
