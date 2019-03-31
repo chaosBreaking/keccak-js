@@ -1,5 +1,7 @@
 'use strict'
 const deepCopy = require('deepcopy')
+const bufXor = require('buffer-xor')
+const BI = require('big-integer')
 const rc = function (t) {
   if (t % 255 === 0) return 1
   let R = [1, 0, 0, 0, 0, 0, 0, 0]
@@ -15,32 +17,38 @@ const rc = function (t) {
   return R[0]
 }
 const RC = [
-  '1000000000000000000000000000000000000000000000000000000000000000',
-  '0100000100000001000000000000000000000000000000000000000000000000',
-  '0101000100000001000000000000000000000000000000000000000000000001',
-  '0000000000000001000000000000000100000000000000000000000000000001',
-  '1101000100000001000000000000000000000000000000000000000000000000',
-  '1000000000000000000000000000000100000000000000000000000000000000',
-  '1000000100000001000000000000000100000000000000000000000000000001',
-  '1001000000000001000000000000000000000000000000000000000000000001',
-  '0101000100000000000000000000000000000000000000000000000000000000',
-  '0001000100000000000000000000000000000000000000000000000000000000',
-  '1001000000000001000000000000000100000000000000000000000000000000',
-  '0101000000000000000000000000000100000000000000000000000000000000',
-  '1101000100000001000000000000000100000000000000000000000000000000',
-  '1101000100000000000000000000000000000000000000000000000000000001',
-  '1001000100000001000000000000000000000000000000000000000000000001',
-  '1100000000000001000000000000000000000000000000000000000000000001',
-  '0100000000000001000000000000000000000000000000000000000000000001',
-  '0000000100000000000000000000000000000000000000000000000000000001',
-  '0101000000000001000000000000000000000000000000000000000000000000',
-  '0101000000000000000000000000000100000000000000000000000000000001',
-  '1000000100000001000000000000000100000000000000000000000000000001',
-  '0000000100000001000000000000000000000000000000000000000000000001',
-  '1000000000000000000000000000000100000000000000000000000000000000',
-  '0001000000000001000000000000000100000000000000000000000000000001'
+  0x0000000000000001,
+  0x0000000000008082,
+  0x800000000000808A,
+  0x8000000080008000,
+  0x000000000000808B,
+  0x0000000080000001,
+  0x8000000080008081,
+  0x8000000000008009,
+  0x000000000000008A,
+  0x0000000000000088,
+  0x0000000080008009,
+  0x000000008000000A,
+  0x000000008000808B,
+  0x800000000000008B,
+  0x8000000000008089,
+  0x8000000000008003,
+  0x8000000000008002,
+  0x8000000000000080,
+  0x000000000000800A,
+  0x800000008000000A,
+  0x8000000080008081,
+  0x8000000000008080,
+  0x0000000080000001,
+  0x8000000080008008
 ]
-
+const r = [
+  [0, 36, 3, 41, 18],
+  [1, 44, 10, 45, 2],
+  [62, 6, 43, 15, 61],
+  [28, 55, 25, 21, 56],
+  [27, 20, 39, 8, 14]
+]
 function mod (a, b) {
   if (a > 0) return a % b
   while (a < 0) {
@@ -131,9 +139,17 @@ function trans2BitString (data) {
   }
   return res
 }
+function ROT (b, n) {
+  // b > buffer
+  // n > int
+  let k = BI(18446744073709551616)
+  n = n % 64
+  return b.shiftRight(64 - n).add(b.shiftLeft(n)).mod(k)
+}
 module.exports = {
   rc,
   mod,
+  ROT,
   sa2log,
   StrArrXOR,
   bufferXOR,
@@ -142,80 +158,72 @@ module.exports = {
   bin2byte,
   arr2string,
   trans2BitString,
+
   // map1 means θ
-  map1: function (sa = this.sa) {
-    let C = []; let D = []
+  map1ori: function (sa = this.sa) {
+    let C = [0, 0, 0, 0, 0]
+    let D = []
     for (let x = 0; x < 5; x++) {
-      C[x] = C[x] === undefined ? [] : C[x]
-      for (let z = 0; z < this.w; z++) {
-        C[x][z] = sa[x][0][z] ^ sa[x][1][z] ^ sa[x][2][z] ^ sa[x][3][z] ^ sa[x][4][z]
-      }
+      C[x] = sa[x].reduce((pre, cur) => bufXor(pre, cur))
     }
     for (let x = 0; x < 5; x++) {
-      D[x] = D[x] === undefined ? [] : D[x]
-      for (let z = 0; z >= 0 && z < this.w; z++) {
-        D[x][z] = C[mod((x - 1), 5)][z] ^ C[mod((x + 1), 5)][mod((z - 1), this.w)]
-      }
+      D[x] = bufXor(C[mod((x - 1), 5)], C[mod((x + 1), 5)])
     }
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
-        for (let z = 0; z >= 0 && z < this.w; z++) {
-          sa[x][y][z] = sa[x][y][z] ^ D[x][z]
-        }
+        sa[x][y] = bufXor(sa[x][y], D[x])
       }
     }
     return sa
   },
-  // map2 means ρ
-  map2: function (sa = this.sa) {
-    // 巨坑。。。需要深拷贝sa！
-    // step 1
-    let newSa = deepCopy(sa)
-    // step 2
-    let [x, y] = [1, 0]
-    // step 3
-    for (let t = 0; t < 24; t++) {
-      // a
-      for (let z = 0; z < this.w; z++) {
-        let temp = mod(z - (t + 1) * (t + 2) / 2, this.w)
-        newSa[x][y][z] = sa[x][y][temp]
-      }
-      // b
-      [x, y] = [y, mod((2 * x + 3 * y), 5)]
+  map1: function (sa = this.sa) {
+    let C = [0, 0, 0, 0, 0]
+    let D = [0, 0, 0, 0, 0]
+    for (let x = 0; x < 5; x++) {
+      C[x] = sa[x][0].xor(sa[x][1]).xor(sa[x][2]).xor(sa[x][3]).xor(sa[x][4])
     }
-    return newSa
-  },
-  // map3 means π
-  map3: function (sa = this.sa) {
-    let newSa = deepCopy(sa)
+    for (let x = 0; x < 5; x++) {
+      D[x] = C[mod(x - 1, 5)].xor(ROT(C[(x + 1) % 5], 1))
+    }
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
-        for (let z = 0; z < this.w; z++) {
-          newSa[x][y][z] = sa[(x + 3 * y) % 5][x][z]
-        }
+        sa[x][y] = sa[x][y].xor(D[x])
       }
     }
-    // let testres = sa2log(newSa)
-    return newSa
+    return sa
   },
-  // map4 means χ
-  map4: function (sa = this.sa) {
-    let newSa = deepCopy(sa)
+  map2n3n4: function (sa = this.sa, ir) {
+    // let newSa = deepCopy(sa)
+    let B = [
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0]
+    ]
+
+    // map2 means ρ
+    // map3 means π
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
-        for (let z = 0; z >= 0 && z < this.w; z++) {
-          newSa[x][y][z] = sa[x][y][z] ^ ((sa[(x + 1) % 5][y][z] ^ 1) * sa[(x + 2) % 5][y][z])
-        }
+        B[y][(2 * x + 3 * y) % 5] = ROT(sa[x][y], r[x][y])
       }
     }
-    // let testres = sa2log(newSa)
-    return newSa
+
+    // map4 means χ
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        sa[x][y] = B[x][y].xor(B[(x + 1) % 5][y].not().and(B[(x + 2) % 5][y]))
+      }
+    }
+
+    sa[0][0] = sa[0][0].xor(BI(RC[ir], 16))
+    return sa
   },
+
   // map5 means ι
   map5: function (sa = this.sa, ir) {
-    for (let z = 0; z < this.w; z++) {
-      sa[0][0][z] ^= RC[ir][z]
-    }
+    sa[0][0] = sa[0][0].xor(BI(RC[ir], 16))
     return sa
   },
   /**
@@ -228,6 +236,24 @@ module.exports = {
     // j = (-m-2) mod x
     let j = mod(-m - 2, x)
     return '1' + '0'.repeat(j) + '1'
+  },
+  fromLaneToHexString: (lane) => {
+    let laneHexBE = lane.toString(16)
+    let nrBytes = Math.floor(laneHexBE.length / 2)
+    return Array.from({ length: nrBytes }).reduce((pre, cur, i) => {
+      let offset = (nrBytes - i - 1) * 26
+      return laneHexBE.slice(offset, offset + 2)
+    })
+  },
+  convertSAToStr (sa) {
+    if (sa.length !== 5) throw new Error('State Array must be 5 x 5')
+    let output = []
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        output[5 * y + x] = this.fromLaneToHexString(sa[x][y])
+      }
+    }
+    return output.join('')
   }
 
 }
