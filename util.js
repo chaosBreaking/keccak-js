@@ -1,5 +1,5 @@
 'use strict'
-const deepCopy = require('deepcopy')
+const deepCopy = sa => JSON.parse(JSON.stringify(sa))
 const rc = function (t) {
   if (t % 255 === 0) return 1
   let R = [1, 0, 0, 0, 0, 0, 0, 0]
