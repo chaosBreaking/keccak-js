@@ -144,16 +144,14 @@ module.exports = {
   trans2BitString,
   // map1 means θ
   map1: function (sa = this.sa) {
-    let C = []; let D = []
+    let C = [[], [], [], [], []]; let D = [[], [], [], [], []]
     for (let x = 0; x < 5; x++) {
-      C[x] = C[x] === undefined ? [] : C[x]
       for (let z = 0; z < this.w; z++) {
         C[x][z] = sa[x][0][z] ^ sa[x][1][z] ^ sa[x][2][z] ^ sa[x][3][z] ^ sa[x][4][z]
       }
     }
     for (let x = 0; x < 5; x++) {
-      D[x] = D[x] === undefined ? [] : D[x]
-      for (let z = 0; z >= 0 && z < this.w; z++) {
+      for (let z = 0; z < this.w; z++) {
         D[x][z] = C[mod((x - 1), 5)][z] ^ C[mod((x + 1), 5)][mod((z - 1), this.w)]
       }
     }
@@ -203,7 +201,7 @@ module.exports = {
     let newSa = deepCopy(sa)
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
-        for (let z = 0; z >= 0 && z < this.w; z++) {
+        for (let z = 0; z < this.w; z++) {
           newSa[x][y][z] = sa[x][y][z] ^ ((sa[(x + 1) % 5][y][z] ^ 1) * sa[(x + 2) % 5][y][z])
         }
       }

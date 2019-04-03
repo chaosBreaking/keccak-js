@@ -37,11 +37,15 @@ class Keccak {
     return data + temp
   }
   initSa (str) {
-    let sa = []
+    let sa = [
+      [[], [], [], [], []],
+      [[], [], [], [], []],
+      [[], [], [], [], []],
+      [[], [], [], [], []],
+      [[], [], [], [], []]
+    ]
     for (let x = 0; x < 5; x++) {
-      if (!sa[x]) sa[x] = []
       for (let y = 0; y < 5; y++) {
-        if (!sa[x][y]) sa[x][y] = []
         for (let z = 0; z < this.w; z++) {
           sa[x][y][z] = str[this.w * (5 * y + x) + z]
         }
@@ -99,7 +103,7 @@ class Keccak {
   keccak_p (b, nr) {
     return function (str) {
       this.initSa(str)
-      for (let ir = 12 + 2 * this.l - nr; ir <= 12 + 2 * this.l - 1; ir++) {
+      for (let ir = 0; ir <= 23; ir++) {
         this.sa = this.rnd(this.sa, ir)
       }
       return util.arr2string(this.sa)
