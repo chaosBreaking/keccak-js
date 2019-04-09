@@ -100,7 +100,7 @@ class Keccak {
     sa = util.map5.call(this, sa, ir)
     return sa
   }
-  keccak_p (b, nr) {
+  keccakP (b, nr) {
     return function (str) {
       this.initSa(str)
       for (let ir = 0; ir <= 23; ir++) {
@@ -119,7 +119,7 @@ class Keccak {
     // 1
     let P = pad.call(this, N)
     // 2
-    let n = Math.floor(P.length / r)
+    let n = ~~(P.length / r)
     // 3
     let c = this.b - r
     // 4
@@ -133,7 +133,7 @@ class Keccak {
       }
     }
     // 5
-    let S = '0'.repeat(this.b)
+    let S = '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
     // 6
     for (let i = 0; i < n; i++) {
       let xoredS = util.StrArrXOR(S, (PArr[i] + '0'.repeat(c)))
@@ -147,12 +147,12 @@ class Keccak {
       S = func.call(this, S)
     }
   }
-  keccak_c (c) {
+  keccakC (c) {
     if (!KECCAKC_TYPE.includes(c)) throw new Error('Keccak[c]: Invalid digest length: ', c)
     this.c = c
     return function (N, d) {
       if (typeof N !== 'string') throw new Error('Keccak[c]: Input must be string')
-      return this.sponge(this.keccak_p(1600, 24), this.bitPad, 1600 - c, N, d)
+      return this.sponge(this.keccakP(1600, 24), this.bitPad, 1600 - c, N, d)
     }.bind(this)
   }
   /*
@@ -165,7 +165,7 @@ class Keccak {
     if (!SHA3_TYPE.includes(d)) throw new Error('SHA3: Invalid digest length: ', d)
     return function (m) {
       m = Buffer.isBuffer(m) ? this.trans2BitString(m) : this.trans2BitString(Buffer.from(String(m)))
-      return util.bin2hex8(this.keccak_c(2 * d)(m + '01', d))
+      return util.bin2hex8(this.keccakC(2 * d)(m + '01', d))
     }.bind(this)
   }
   /*
@@ -179,14 +179,14 @@ class Keccak {
     return function (m, outLength = 2 * d) {
       if (!Number.isSafeInteger(+outLength)) throw new Error('SHAKE: Invalid output length')
       m = Buffer.isBuffer(m) ? this.trans2BitString(m) : this.trans2BitString(Buffer.from(String(m)))
-      return util.bin2hex8(this.keccak_c(2 * d)(m + '1111', +outLength))
+      return util.bin2hex8(this.keccakC(2 * d)(m + '1111', +outLength))
     }.bind(this)
   }
 }
 
 module.exports = {
-  keccak256: new Keccak().keccak_c(256),
-  keccak512: new Keccak().keccak_c(512),
+  keccak256: new Keccak().keccakC(256),
+  keccak512: new Keccak().keccakC(512),
   sha3_224: (() => new Keccak().sha3(224))(),
   sha3_256: (() => new Keccak().sha3(256))(),
   sha3_384: (() => new Keccak().sha3(384))(),
