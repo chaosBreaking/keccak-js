@@ -43,27 +43,28 @@ const ROT = (a, d) => a.rotl(d)
 // FIPS 800 Append B.2
 const bytePad = (data, q, padType = 'sha3') => {
   let pad
-  data = Buffer.isBuffer(data) ? data : Buffer.from(data)
   if (padType === 'sha3') {
     switch (q) {
-      case 1: pad = Buffer.from([0x86]); break
-      case 2: pad = Buffer.from([0x06, 0x80]); break
-      default: pad = Buffer.from([0x06, ...Array(q - 2).fill(0), 0x80]); break
+      case 1: pad = String.fromCharCode(0x86); break
+      case 2: pad = String.fromCharCode(0x06) + String.fromCharCode(0x80); break
+      default: pad = String.fromCharCode(0x06) + String.fromCharCode(0x00).repeat(q - 2) + String.fromCharCode(0x80); break
     }
   } else if (padType === 'shake') {
     switch (q) {
-      case 1: pad = Buffer.from([0x9F]); break
-      case 2: pad = Buffer.from([0x1F, 0x80]); break
-      default: pad = Buffer.from([0x1F, ...Array(q - 2).fill(0), 0x80]); break
+      case 1: pad = String.fromCharCode(0x9F); break
+      case 2: pad = String.fromCharCode(0x1F) + String.fromCharCode(0x80); break
+      default: pad = String.fromCharCode(0x1F) + String.fromCharCode(0x00).repeat(q - 2) + String.fromCharCode(0x80); break
+    }
+  } else if (padType === 'keccak') {
+    switch (q) {
+      case 1: pad = String.fromCharCode(0x81); break
+      case 2: pad = String.fromCharCode(0x01) + String.fromCharCode(0x80); break
+      default: pad = String.fromCharCode(0x01) + String.fromCharCode(0x00).repeat(q - 2) + String.fromCharCode(0x80); break
     }
   } else {
-    switch (q) {
-      case 1: pad = Buffer.from([0x81]); break
-      case 2: pad = Buffer.from([0x01, 0x80]); break
-      default: pad = Buffer.from([0x01, ...Array(q - 2).fill(0), 0x80]); break
-    }
+    pad = ''
   }
-  return Buffer.concat([data, pad])
+  return data + pad
 }
 const RC = [
   '0000000000000001', '0000000000008082', '800000000000808a',
@@ -128,12 +129,16 @@ function keccakF (state) {
 function transpose (array) { // to iterate across y (columns) before x (rows)
   return array.map((row, r) => array.map(col => col[r]))
 }
-
+function utf8Encode (str) {
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str, 'utf-8').reduce((prev, curr) => prev + String.fromCharCode(curr), '')
+  return unescape(encodeURIComponent(str))
+}
 function keccakC (c, M, padType, d = 0) {
   // b = 1600
   // r + c => 1600 : keccak-f
   // padding
   const r = 1600 - c
+  M = utf8Encode(M)
   let q = (r / 8) - (util.mod(M.length, r / 8))
   let msg = bytePad(M, q, padType)
   // Initialization
@@ -148,14 +153,14 @@ function keccakC (c, M, padType, d = 0) {
   // for each block pi in P
   for (let i = 0; i < msg.length; i += blockSize) {
     for (let j = 0; j < r / 64; j++) {
-      const lo = (msg[i + j * 8 + 0] << 0) +
-        (msg[i + j * 8 + 1] << 8) +
-        (msg[i + j * 8 + 2] << 16) +
-        (msg[i + j * 8 + 3] << 24)
-      const hi = (msg[i + j * 8 + 4] << 0) +
-        (msg[i + j * 8 + 5] << 8) +
-        (msg[i + j * 8 + 6] << 16) +
-        (msg[i + j * 8 + 7] << 24)
+      const lo = (msg.charCodeAt(i + j * 8 + 0) << 0) +
+        (msg.charCodeAt(i + j * 8 + 1) << 8) +
+        (msg.charCodeAt(i + j * 8 + 2) << 16) +
+        (msg.charCodeAt(i + j * 8 + 3) << 24)
+      const hi = (msg.charCodeAt(i + j * 8 + 4) << 0) +
+        (msg.charCodeAt(i + j * 8 + 5) << 8) +
+        (msg.charCodeAt(i + j * 8 + 6) << 16) +
+        (msg.charCodeAt(i + j * 8 + 7) << 24)
       let x = j % 5
       let y = ~~(j / 5)
       state[x][y].lo = state[x][y].lo ^ lo
@@ -166,25 +171,21 @@ function keccakC (c, M, padType, d = 0) {
   // squeeze phase
   let l = !d ? c / 2 : d
   let md = transpose(state).map(plane => plane.map(lane => lane.trans2String().match(/.{2}/g).reverse().join('')).join('')).join('').slice(0, l / 4)
-
   return md
 }
-const sha3 = (d) => {
-  return (m) => keccakC(d * 2, m)
-}
 
-const shake = (d) => {
-  return (m, outLength = 2 * d) => {
-    if (!Number.isSafeInteger(+outLength)) throw new Error('SHAKE: Invalid output length')
-    return keccakC(d * 2, m, 'shake', +outLength)
-  }
-}
+const keccak = d => (m, L, padType = 'keccak') => keccakC(2 * d, m, padType, +L)
+
+const sha3 = d => (m) => keccakC(d * 2, m, 'sha3')
+
+const shake = d => (m, outLength = 2 * d) => (Number.isSafeInteger(+outLength)) ? keccakC(d * 2, m, 'shake', +outLength) : new Error('SHAKE: Invalid output length')
 
 module.exports = {
-  keccak224: (m, L) => keccakC(448, m, 'keccak', +L),
-  keccak256: (m, L) => keccakC(512, m, 'keccak', +L),
-  keccak384: (m, L) => keccakC(768, m, 'keccak', +L),
-  keccak512: (m, L) => keccakC(1024, m, 'keccak', +L),
+  keccak128: keccak(128),
+  keccak224: keccak(224),
+  keccak256: keccak(256),
+  keccak384: keccak(384),
+  keccak512: keccak(512),
   sha3_224: sha3(224),
   sha3_256: sha3(256),
   sha3_384: sha3(384),
