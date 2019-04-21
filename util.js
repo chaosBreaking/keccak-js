@@ -79,20 +79,10 @@ function bin2hex4 (data) {
 }
 function bin2hex8 (data) {
   let res = ''
-  let count = 0
-  while (data[count]) {
-    let numa = 0; let numb = 0
-    let byte = data.slice(count, count + 8).split('').reverse()
-    let [a, b] = [byte.slice(0, 4), byte.slice(4)]
-    a.forEach((v, i) => {
-      numa += +v * 2 ** (3 - i)
-    })
-    b.forEach((v, i) => {
-      numb += +v * 2 ** (3 - i)
-    })
-    res += numa.toString(16) + numb.toString(16)
-    count += 8
-  }
+  data.match(/.{8}/g).forEach((byte, index) => {
+    let [a, b] = [...byte.match(/.{4}/g)]
+    res += '' + parseInt(b.split('').reverse().join(''), 2).toString(16) + parseInt(a.split('').reverse().join(''), 2).toString(16)
+  })
   return res
 }
 // 注意：2进制字符串转16进制时，如果用8位为单位转换的话，需要注意00000000或者0000xxxx等类型，会丢失高四位的0,比如00000001会被转为1而不是01
