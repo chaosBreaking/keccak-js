@@ -138,9 +138,10 @@ function keccakC (c, M, d = 0, option = { format: 'string' }) {
   // b = 1600
   // r + c => 1600 : keccak-f
   // padding
+  // 对输入进行utf-编码
+  M = format === 'string' ? utf8Encode(M) : M
   const r = 1600 - c
   const q = (r / 8) - (util.mod(M.length, r / 8))
-  M = format === 'string' ? utf8Encode(M) : M
   let msg = bytePad(M, q, padType)
   // Initialization
   let state = [[], [], [], [], []]

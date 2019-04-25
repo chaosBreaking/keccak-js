@@ -11,10 +11,10 @@
   opad 是外部填充（0x5c5c5c…5c5c，一段十六进制常量）
   ipad 是内部填充（0x363636…3636，一段十六进制常量）
 */
-const sha224 = require('./demo/keccak.js/index.js').sha3_224
-const sha256 = require('./demo/keccak.js/index.js').sha3_256
-const sha384 = require('./demo/keccak.js/index.js').sha3_384
-const sha512 = require('./demo/keccak.js/index.js').sha3_512
+const sha224 = require('./qKeccak.js').sha3_224
+const sha256 = require('./qKeccak.js').sha3_256
+const sha384 = require('./qKeccak.js').sha3_384
+const sha512 = require('./qKeccak.js').sha3_512
 const funcs = { sha224, sha256, sha384, sha512 }
 const BLOCKSIZE = { 224: 144, 256: 136, 384: 104, 512: 72 }
 const bufferXOR = (a, b) => {
@@ -35,10 +35,14 @@ const str2Buf = S => {
   return Buffer.from(arr)
 }
 
+const hexBytesToString = (hexStr) => { // convert string of hex numbers to a string of chars (eg '616263' -> 'abc').
+  const str = hexStr.replace(' ', ''); // allow space-separated groups
+  return str === '' ? '' : str.match(/.{2}/g).map(byte => String.fromCharCode(parseInt(byte, 16))).join('')
+}
 function hmac (type = 224) {
   if (!funcs[`sha${type}`]) throw new Error('Invalid function type')
   let hash = funcs[`sha${type}`]
-  return (key, message) => {
+  return (key = '', message = '') => {
     message = Buffer.from(String(message))
     key = Buffer.from(String(key))
     key = key.length > BLOCKSIZE[type] ? str2Buf(hash(key)) : Buffer.concat([key, Buffer.from([...Array(BLOCKSIZE[type] - key.length).fill(0)])])
@@ -46,8 +50,9 @@ function hmac (type = 224) {
     let opad = Buffer.from([...Array(BLOCKSIZE[type]).fill(0x5c)])
     let i_key_pad = bufferXOR(ipad, key)
     let o_key_pad = bufferXOR(opad, key)
-    let digest = str2Buf(hash(Buffer.concat([i_key_pad, message]))) // 应该是Buffer
-    return hash(Buffer.concat([o_key_pad, digest]))
+    let temp = hexBytesToString(Buffer.concat([i_key_pad, message]).toString('hex'))
+    let digest = str2Buf(hash(temp, { format: 'utf-8' }))
+    return hash(hexBytesToString(Buffer.concat([o_key_pad, digest]).toString('hex')), { format: 'utf-8' })
   }
 }
 

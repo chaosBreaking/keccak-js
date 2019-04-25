@@ -11,11 +11,13 @@ const funcs = { sha224, sha256, sha384, sha512 }
 const st = { 'sha224': st224, 'sha256': st256, 'sha384': st384, 'sha512': st512 }
 const arr = [
   '',
+  '呵呵',
   'test',
   '0x125980789faecad8717',
   '2345678956587118911789',
   'many symbols like this @#$%^&*(&$%^&U&IYBY&!',
-  'long long'.repeat(2048)
+  'long long'.repeat(2048),
+  '很长很长'.repeat(65536)
 ]
 let f = true
 console.log(`------------------------ sha3.js 测试 ------------------------\n`)

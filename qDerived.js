@@ -1,10 +1,10 @@
 /* eslint-disable camelcase */
 'use strict'
 const util = require('./util.js')
-const keccak256 = require('./index.js').keccak128
-const keccak512 = require('./index.js').keccak256
-const shake128 = require('./index.js').shake128
-const shake256 = require('./index.js').shake256
+const keccak256 = require('./qKeccak.js').keccak128
+const keccak512 = require('./qKeccak.js').keccak256
+const shake128 = require('./qKeccak.js').shake128
+const shake256 = require('./qKeccak.js').shake256
 const funcs = { shake128, shake256, keccak256, keccak512 }
 const Rate = {
   128: 168,
