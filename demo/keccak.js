@@ -1,6 +1,6 @@
 'use strict'
 
-const util = require('./util.js')
+const util = require('../util.js')
 const KECCAKC_TYPE = [256, 448, 512, 768, 1024]
 const SHA3_TYPE = [224, 256, 384, 512]
 const SHAKE_TYPE = [128, 256]

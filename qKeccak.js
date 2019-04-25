@@ -133,13 +133,14 @@ function utf8Encode (str) {
   if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str, 'utf-8').reduce((prev, curr) => prev + String.fromCharCode(curr), '')
   return unescape(encodeURIComponent(str))
 }
-function keccakC (c, M, padType, d = 0) {
+function keccakC (c, M, d = 0, option = { format: 'string' }) {
+  let { padType, format } = option
   // b = 1600
   // r + c => 1600 : keccak-f
   // padding
   const r = 1600 - c
-  M = utf8Encode(M)
-  let q = (r / 8) - (util.mod(M.length, r / 8))
+  const q = (r / 8) - (util.mod(M.length, r / 8))
+  M = format === 'string' ? utf8Encode(M) : M
   let msg = bytePad(M, q, padType)
   // Initialization
   let state = [[], [], [], [], []]
@@ -174,11 +175,11 @@ function keccakC (c, M, padType, d = 0) {
   return md
 }
 
-const keccak = d => (m, L, padType = 'keccak') => keccakC(2 * d, m, padType, +L)
+const keccak = d => (m, L, option) => keccakC(2 * d, m, +L, option)
 
-const sha3 = d => (m) => keccakC(d * 2, m, 'sha3')
+const sha3 = d => (m, option) => keccakC(d * 2, m, null, option)
 
-const shake = d => (m, outLength = 2 * d) => (Number.isSafeInteger(+outLength)) ? keccakC(d * 2, m, 'shake', +outLength) : new Error('SHAKE: Invalid output length')
+const shake = d => (m, outLength = 2 * d, option = { padType: 'shake' }) => (Number.isSafeInteger(+outLength)) ? keccakC(d * 2, m, +outLength, option) : new Error('SHAKE: Invalid output length')
 
 module.exports = {
   keccak128: keccak(128),

@@ -1,6 +1,6 @@
 'use strict'
-const cshake128 = require('../derived.js').cshake128
-const cshake256 = require('../derived.js').cshake256
+const cshake128 = require('../qDerived.js').cshake128
+const cshake256 = require('../qDerived.js').cshake256
 const c128 = require('../../other/examp/js-sha3').cshake128
 const c256 = require('../../other/examp/js-sha3').cshake256
 const lens = [8, 16, 32, 64, 128, 256, 512, 1024]

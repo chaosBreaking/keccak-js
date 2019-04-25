@@ -1,14 +1,14 @@
 'use strict'
-const kmacx128 = require('../derived.js').kmac128
-const kmacx256 = require('../derived.js').kmac256
+const kmacx128 = require('../qDerived.js').kmac128
+const kmacx256 = require('../qDerived.js').kmac256
 const k128 = require('../../other/examp/js-sha3').kmac128
 const k256 = require('../../other/examp/js-sha3').kmac256
 const lens = [8, 16, 32, 64, 128, 256, 512, 1024]
 const arr = [
   {
-    'K': '',
-    'X': '',
-    'S': ''
+    'K': '我',
+    'X': '你',
+    'S': '他'
   },
   {
     'K': 'a',

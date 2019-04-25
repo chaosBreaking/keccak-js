@@ -1,21 +1,16 @@
 /* eslint-disable camelcase */
 'use strict'
 const util = require('./util.js')
-const keccak256 = require('./k2.js').keccak128
-const keccak512 = require('./k2.js').keccak256
-const shake128 = require('./k2.js').shake128
-const shake256 = require('./k2.js').shake256
+const keccak256 = require('./index.js').keccak128
+const keccak512 = require('./index.js').keccak256
+const shake128 = require('./index.js').shake128
+const shake256 = require('./index.js').shake256
 const funcs = { shake128, shake256, keccak256, keccak512 }
 const Rate = {
   128: 168,
   256: 136
 }
 const enc8 = x => Number(x).toString(2).padStart(8, '0').split('').reverse().join('')
-const bytepad = (X, w) => {
-  let z = left_encode(w) + X
-  z = z && z.length % 8 === 0 ? z : z.padEnd(8 - z.length % 8 + z.length, '0')
-  return z.length / 8 % w === 0 ? z : z.padEnd(8 * (w - z.length / 8 % w) + z.length, '00000000')
-}
 const calOi = (x, n) => {
   let Oi = []
   let res = Number(x)
@@ -35,7 +30,21 @@ const pre_encode = x => {
 const left_encode = x => pre_encode(x).join('')
 const right_encode = x => pre_encode(x).reverse().join('')
 const encode_string = S => S.length >= 0 && S.length < 2 ** 1023 ? left_encode(S.length) + S : new Error('Invalid input string')
+const bytepad = (X, w) => {
+  let z = left_encode(w) + X
+  z = z && z.length % 8 === 0 ? z : z.padEnd(8 - z.length % 8 + z.length, '0')
+  return z.length / 8 % w === 0 ? z : z.padEnd(8 * (w - z.length / 8 % w) + z.length, '00000000')
+}
 
+const trans2String = str => str.match(/.{8}/g).map(byteArr => String.fromCharCode(parseInt(byteArr.split('').reverse().join(''), 2))).join('')
+
+const bitPad = (data, b, c) => {
+  if (typeof data !== 'string') throw new Error('bit填充的输入必须为字符串')
+  // 按照pad10*1的规则进行位填充 N为二进制表示的字符串
+  let temp = util.pad101(b - c, data.length)
+  // 拼接
+  return data + temp
+}
 const cShake = type => (!funcs[`shake${type}`] || !funcs[`keccak${2 * type}`])
   ? new Error('Invalid Function type: ' + type) : (X, L, N = '', S = '', option = {}) => {
     if (!Number.isSafeInteger(L)) throw new Error('Invalid Input L')
@@ -44,17 +53,21 @@ const cShake = type => (!funcs[`shake${type}`] || !funcs[`keccak${2 * type}`])
     N = Buffer.isBuffer(N) ? util.trans2BitString(N) : util.trans2BitString(Buffer.from(String(N)))
     S = Buffer.isBuffer(S) ? util.trans2BitString(S) : util.trans2BitString(Buffer.from(String(S)))
     let encodedStr = bytepad(encode_string(N) + encode_string(S), Rate[type])
-    return funcs[`keccak${2 * type}`](encodedStr + X + '00', L)
+    let M = encodedStr + X + '00'
+    M = trans2String(bitPad(M, 1600, 2 * type))
+    return funcs[`keccak${2 * type}`](M, L, { padType: 'nopad', format: 'utf-8' })
   }
 const kmac = type => (K, X, L, S = '') => {
   if (!Number.isSafeInteger(L)) throw new Error('Invalid Input L')
   K = util.trans2BitString(Buffer.from(String(K)))
   X = util.trans2BitString(Buffer.from(String(X)))
   S = util.trans2BitString(Buffer.from(String(S)))
-  let F = '11010010101100101000001011000010' // util.trans2BitString(Buffer.from('KMAC'))
+  let F = '11010010101100101000001011000010' // util.util.trans2BitString(Buffer.from('KMAC'))
   let newX = bytepad(encode_string(K), Rate[type]) + X + right_encode(+L)
   let encodedStr = bytepad(encode_string(F) + encode_string(S), Rate[type])
-  return funcs[`keccak${2 * type}`](encodedStr + newX + '00', L)
+  let M = encodedStr + newX + '00'
+  M = trans2String(bitPad(M, 1600, 2 * type))
+  return funcs[`keccak${2 * type}`](M, L, { padType: 'nopad', format: 'utf-8' })
 }
 module.exports = {
   cShake,

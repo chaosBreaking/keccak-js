@@ -1,8 +1,8 @@
 'use strict'
-const sha224 = require('../k2.js').sha3_224
-const sha256 = require('../k2.js').sha3_256
-const sha384 = require('../k2.js').sha3_384
-const sha512 = require('../k2.js').sha3_512
+const sha224 = require('../qKeccak.js').sha3_224
+const sha256 = require('../qKeccak.js').sha3_256
+const sha384 = require('../qKeccak.js').sha3_384
+const sha512 = require('../qKeccak.js').sha3_512
 const st224 = require('../../other/examp/js-sha3').sha3_224
 const st256 = require('../../other/examp/js-sha3').sha3_256
 const st384 = require('../../other/examp/js-sha3').sha3_384

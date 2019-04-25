@@ -11,10 +11,10 @@
   opad 是外部填充（0x5c5c5c…5c5c，一段十六进制常量）
   ipad 是内部填充（0x363636…3636，一段十六进制常量）
 */
-const sha224 = require('../keccak-js/keccak.js').sha3_224
-const sha256 = require('../keccak-js/keccak.js').sha3_256
-const sha384 = require('../keccak-js/keccak.js').sha3_384
-const sha512 = require('../keccak-js/keccak.js').sha3_512
+const sha224 = require('./demo/keccak.js/index.js').sha3_224
+const sha256 = require('./demo/keccak.js/index.js').sha3_256
+const sha384 = require('./demo/keccak.js/index.js').sha3_384
+const sha512 = require('./demo/keccak.js/index.js').sha3_512
 const funcs = { sha224, sha256, sha384, sha512 }
 const BLOCKSIZE = { 224: 144, 256: 136, 384: 104, 512: 72 }
 const bufferXOR = (a, b) => {

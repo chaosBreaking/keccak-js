@@ -1,5 +1,6 @@
+/* eslint-disable camelcase */
 'use strict'
-const util = require('./util.js')
+const util = require('../util.js')
 const keccak256 = require('./keccak.js').keccak256
 const keccak512 = require('./keccak.js').keccak512
 const shake128 = require('./keccak.js').shake128
