@@ -153,7 +153,7 @@ function keccakC (c, M, d = 0, option = { format: 'string' }) {
   // Absorbing phase
   const blockSize = r / 64 * 8
   // for each block pi in P
-  for (let i = 0; i < msg.length; i += blockSize) {
+  for (let i = 0, length = msg.length; i < length; i += blockSize) {
     for (let j = 0; j < r / 64; j++) {
       const lo = (msg.charCodeAt(i + j * 8 + 0) << 0) +
         (msg.charCodeAt(i + j * 8 + 1) << 8) +

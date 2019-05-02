@@ -20,7 +20,7 @@ const BLOCKSIZE = { 224: 144, 256: 136, 384: 104, 512: 72 }
 const bufferXOR = (a, b) => {
   if (!(Buffer.isBuffer(a) && Buffer.isBuffer(b))) throw new Error('Unsupport format of input')
   if (a.length !== b.length) throw new Error('Cannot handle input with different length')
-  for (let i = 0; i < a.length; i++) {
+  for (let i = 0, length = a.length; i < length; i++) {
     a[i] ^= b[i]
   }
   return a
@@ -36,7 +36,7 @@ const str2Buf = S => {
 }
 
 const hexBytesToString = (hexStr) => { // convert string of hex numbers to a string of chars (eg '616263' -> 'abc').
-  const str = hexStr.replace(' ', ''); // allow space-separated groups
+  const str = hexStr.replace(' ', '') // allow space-separated groups
   return str === '' ? '' : str.match(/.{2}/g).map(byte => String.fromCharCode(parseInt(byte, 16))).join('')
 }
 function hmac (type = 224) {
