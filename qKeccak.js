@@ -183,6 +183,7 @@ const sha3 = d => (m, option) => keccakC(d * 2, m, null, option)
 const shake = d => (m, outLength = 2 * d, option = { padType: 'shake' }) => (Number.isSafeInteger(+outLength)) ? keccakC(d * 2, m, +outLength, option) : new Error('SHAKE: Invalid output length')
 
 module.exports = {
+  keccakC,
   keccak128: keccak(128),
   keccak224: keccak(224),
   keccak256: keccak(256),

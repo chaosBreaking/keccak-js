@@ -1,11 +1,10 @@
 /* eslint-disable camelcase */
 'use strict'
 const util = require('./util.js')
-const keccak256 = require('./qKeccak.js').keccak128
-const keccak512 = require('./qKeccak.js').keccak256
+const Keccak = require('./qKeccak.js').keccakC
 const shake128 = require('./qKeccak.js').shake128
 const shake256 = require('./qKeccak.js').shake256
-const funcs = { shake128, shake256, keccak256, keccak512 }
+const funcs = { shake128, shake256 }
 const Rate = {
   128: 168,
   256: 136
@@ -67,7 +66,7 @@ const kmac = type => (K, X, L, S = '') => {
   let encodedStr = bytepad(encode_string(F) + encode_string(S), Rate[type])
   let M = encodedStr + newX + '00'
   M = trans2String(bitPad(M, 1600, 2 * type))
-  return funcs[`keccak${2 * type}`](M, L, { padType: 'nopad', format: 'utf-8' })
+  return Keccak(2 * type, M, L, { padType: 'nopad', format: 'utf-8' })
 }
 module.exports = {
   cShake,
