@@ -26,9 +26,6 @@
   },
   "homepage": "https://github.com/chaosBreaking/keccak-js#readme",
   "dependencies": {
-    "big-integer": "^1.6.43",
-    "buffer-xor": "^2.0.2",
-    "deepcopy": "^2.0.0"
   },
   "devDependencies": {
     "eslint": "^5.15.3",
