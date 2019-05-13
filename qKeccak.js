@@ -61,6 +61,12 @@ const bytePad = (data, q, padType = 'sha3') => {
       case 2: pad = String.fromCharCode(0x01) + String.fromCharCode(0x80); break
       default: pad = String.fromCharCode(0x01) + String.fromCharCode(0x00).repeat(q - 2) + String.fromCharCode(0x80); break
     }
+  } else if (padType === 'kmac') {
+    switch (q) {
+      case 1: pad = String.fromCharCode(0x84); break
+      case 2: pad = String.fromCharCode(0x04) + String.fromCharCode(0x80); break
+      default: pad = String.fromCharCode(0x04) + String.fromCharCode(0x00).repeat(q - 2) + String.fromCharCode(0x80); break
+    }
   } else {
     pad = ''
   }

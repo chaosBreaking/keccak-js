@@ -26,18 +26,10 @@ const bufferXOR = (a, b) => {
   return a
 }
 
-const str2Buf = S => {
-  S = S.split('')
-  let arr = []
-  while (S.length > 0) {
-    arr.push('0x' + S.splice(0, 2).join(''))
-  }
-  return Buffer.from(arr)
-}
+const str2Buf = S => Buffer.from(S.match(/.{2}/g).map(ele => '0x' + ele))
 
 const hexBytesToString = (hexStr) => { // convert string of hex numbers to a string of chars (eg '616263' -> 'abc').
-  const str = hexStr.replace(' ', '') // allow space-separated groups
-  return str === '' ? '' : str.match(/.{2}/g).map(byte => String.fromCharCode(parseInt(byte, 16))).join('')
+  return hexStr === '' ? '' : hexStr.match(/.{2}/g).map(byte => String.fromCharCode(parseInt(byte, 16))).join('')
 }
 function hmac (type = 224) {
   if (!funcs[`sha${type}`]) throw new Error('Invalid function type')
