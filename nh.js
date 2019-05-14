@@ -28,10 +28,14 @@ const bufferXOR = (a, b) => {
   }
   return res
 }
+
+const str2Buf = S => Buffer.from(S.match(/.{2}/g).map(ele => '0x' + ele))
+
 const hexBytesToString = (hexStr) => { // convert string of hex numbers to a string of chars (eg '616263' -> 'abc').
   return hexStr === '' ? '' : hexStr.match(/.{2}/g).map(byte => String.fromCharCode(parseInt(byte, 16))).join('')
 }
-
+const str2hex = str => str.split('').map(ele => ele.charCodeAt(0).toString(16)).join('')
+const buf2hex = buf => buf.toString('hex')
 function hmac (type = 224) {
   if (!funcs[`sha${type}`]) throw new Error('Invalid function type')
   let hash = funcs[`sha${type}`]
@@ -41,12 +45,14 @@ function hmac (type = 224) {
     if (key.length > BLOCKSIZE[type]) {
       key = hexBytesToString(hash(key))
     }
-    key += [...Array.from({ length: BLOCKSIZE[type] - key.length }).fill(padUnit)].join('')
+    let pad = [...Array.from({ length: BLOCKSIZE[type] - key.length }).fill(padUnit)].join('')
+    key += pad
     let ipad = [...Array.from({ length: BLOCKSIZE[type] }).fill(ipadUnit)].join('')
     let opad = [...Array.from({ length: BLOCKSIZE[type] }).fill(opadUnit)].join('')
     let i_key_pad = bufferXOR(ipad, key)
     let o_key_pad = bufferXOR(opad, key)
-    let digest = hexBytesToString(hash(i_key_pad + message, { format: 'utf-8' }))
+    let temp = i_key_pad + message
+    let digest = hexBytesToString(hash(temp, { format: 'utf-8' }))
     return hash(o_key_pad + digest, { format: 'utf-8' })
   }
 }
