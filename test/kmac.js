@@ -53,11 +53,18 @@ arr.forEach((v, index) => {
   lens.forEach(l => {
     let r2 = k128(v.K, v.X, l, v.S)
     let r1 = kmacx128(v.K, v.X, l, v.S)
-    console.log(`KMAC128 输出长度${l}bit: ${r1 === r2 ? '正确, 计算结果：' + r1 : '失败 \n' + r1 + ' \nvs\n' + r2}`)
+    console.log(`KMAC128 输出长度${l} bit\n${r1 === r2 ? '正确, 计算结果：' + r1 : '失败 \n' + r1 + ' \nvs\n' + r2}`)
+    if (r1 !== r2) f = false
+  })
+  console.log(`-`.repeat(154))
+})
+arr.forEach((v, index) => {
+  console.log(`测试集${index + 1}`)
+  lens.forEach(l => {
     let r3 = k256(v.K, v.X, l, v.S)
     let r4 = kmacx256(v.K, v.X, l, v.S)
-    console.log(`KMAC128 输出长度${l}bit: ${r3 === r4 ? '正确, 计算结果：' + r3 : '失败 \n' + r3 + ' \nvs\n' + r4}`)
-    if (r1 !== r2 || r3 !== r4) f = false
+    console.log(`KMAC256 输出长度:${l}bit ${r3 === r4 ? '正确\n 计算结果：' + r3 : '失败 \n' + r3 + ' \nvs\n' + r4}`)
+    if (r3 !== r4) f = false
   })
   console.log(`-`.repeat(154))
 })

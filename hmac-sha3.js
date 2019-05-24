@@ -5,7 +5,7 @@
   H为密码散列函数（如MD5或SHA-1）
   K为密钥（secret key）
   m是要认证的消息
-  K'是从原始密钥K导出的另一个秘密密钥（如果K短于散列函数的输入块大小，则向右填充（Padding）零；如果比该块大小更长，则对K进行散列）
+  K'是从原始密钥K导出的另一个密钥（如果K短于散列函数的输入块大小，则向右填充（Padding）零；如果比该块大小更长，则对K进行散列）
   || 代表串接
   ⊕ 代表异或（XOR）
   opad 是外部填充（0x5c5c5c…5c5c，一段十六进制常量）
@@ -37,10 +37,8 @@ function hmac (type = 224) {
   let hash = funcs[`sha${type}`]
   return (key = '', message = '') => {
     message = unescape(encodeURIComponent(message + ''))
-    key = unescape(encodeURIComponent(key + ''))
-    if (key.length > BLOCKSIZE[type]) {
-      key = hexBytesToString(hash(key))
-    }
+    let encodeKey = unescape(encodeURIComponent(key + ''))
+    key = encodeKey.length > BLOCKSIZE[type] ? hexBytesToString(hash(key)) : encodeKey
     key += [...Array.from({ length: BLOCKSIZE[type] - key.length }).fill(padUnit)].join('')
     let ipad = [...Array.from({ length: BLOCKSIZE[type] }).fill(ipadUnit)].join('')
     let opad = [...Array.from({ length: BLOCKSIZE[type] }).fill(opadUnit)].join('')
